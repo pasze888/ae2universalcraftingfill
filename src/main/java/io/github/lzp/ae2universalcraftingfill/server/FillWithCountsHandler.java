@@ -10,10 +10,9 @@
  */
 package io.github.lzp.ae2universalcraftingfill.server;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -161,14 +160,15 @@ public final class FillWithCountsHandler {
             // 仍缺的部分按缺口数量安排 autocraft（槽位内容正确时才安排）
             var missing = desired - filled.getCount();
             if (missing > 0 && fillable && packet.craftMissing() && craftingService != null) {
-                final int slot = x;
-                findCraftableKey(entry.template(), craftingService).ifPresent(key -> {
+                var craftable = (AEItemKey) craftingService.getFuzzyCraftable(AEItemKey.of(entry.template()),
+                        key -> ((AEItemKey) key).matches(entry.template()));
+                if (craftable != null) {
                     // AutoCraftEntry 的数量语义 = slots 列表长度，重复槽位下标 n 次 = 该槽要 n 个
-                    var slots = toAutoCraft.computeIfAbsent(key, k -> new IntArrayList());
+                    var slots = toAutoCraft.computeIfAbsent(craftable, k -> new IntArrayList());
                     for (var i = 0; i < missing; i++) {
-                        slots.add(slot);
+                        slots.add(x);
                     }
-                });
+                }
             }
         }
 
@@ -199,7 +199,8 @@ public final class FillWithCountsHandler {
             }
             var item = playerInv.getItem(i);
             if (!item.isEmpty() && ItemStack.isSameItemSameComponents(item, template)) {
-                var split = item.split(Math.min(amount - taken.getCount(), item.getCount()));
+                // split 内部已按 min(amount, getCount()) 收口（ItemStack.java:315）
+                var split = item.split(amount - taken.getCount());
                 if (!split.isEmpty()) {
                     if (taken.isEmpty()) {
                         taken = split;
@@ -217,24 +218,11 @@ public final class FillWithCountsHandler {
      */
     private static List<AEItemKey> findBestMatchingItemStack(ItemStack template, IPartitionList filter,
             KeyCounter storage) {
-        var what = AEItemKey.of(template);
-        var candidates = new ArrayList<Object2LongMap.Entry<AEKey>>();
-        for (var e : storage.findFuzzy(what, FuzzyMode.IGNORE_ALL)) {
-            var key = (AEItemKey) e.getKey();
-            if (key.matches(what.toStack(1)) && (filter == null || filter.isListed(key))) {
-                candidates.add(e);
-            }
-        }
-        // 按可用数量降序
-        candidates.sort((a, b) -> Long.compare(b.getLongValue(), a.getLongValue()));
-        return candidates.stream().map(Object2LongMap.Entry::getKey).map(k -> (AEItemKey) k).toList();
-    }
-
-    private static Optional<AEItemKey> findCraftableKey(ItemStack template,
-            ICraftingService craftingService) {
-        var what = AEItemKey.of(template);
-        return Optional.ofNullable(
-                (AEItemKey) craftingService.getFuzzyCraftable(what,
-                        key -> ((AEItemKey) key).matches(what.toStack(1))));
+        return storage.findFuzzy(AEItemKey.of(template), FuzzyMode.IGNORE_ALL).stream()
+                .filter(e -> e.getKey() instanceof AEItemKey key && key.matches(template)
+                        && (filter == null || filter.isListed(key)))
+                .sorted(Comparator.comparingLong((Object2LongMap.Entry<AEKey> e) -> e.getLongValue()).reversed())
+                .map(e -> (AEItemKey) e.getKey())
+                .toList();
     }
 }

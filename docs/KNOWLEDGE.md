@@ -69,3 +69,12 @@
   本地标签未必齐全，分支引用可用。
 - `ItemStack.OPTIONAL_STREAM_CODEC`（1.21.1，api-sources 已核）即 AE2 原包的模板编解码，
   空栈编码为空，可复用。
+- `Inventory.add(ItemStack)`（1.21.1，api-sources Inventory.java:252-288 已核）**会收缩传入栈**：
+  L277 `stack.setCount(addResource(stack))` 循环吸收、受损物品 L263 `copyAndClear()` 清空源栈。
+  故「add 后按 isEmpty 决定留格」不会复制物品（AE2 原包同款写法）。
+- `ItemStack.split(int)`（api-sources ItemStack.java:315 已核）内部 `Math.min(amount, getCount())`
+  收口，调用侧无需再钳位。
+- 自建数量包与 AE2 `recipeId=null` 模板包在 count=1 时逐槽语义等价（匹配判定
+  `isSameItemSameComponents` ≙ `Ingredient.of(template).test`，提取/背包/autocraft 同构），
+  故客户端发送路径只需两条：`hasCounts || oversizedList` → 自建包，否则
+  `CraftingHelper.performTransfer`。
