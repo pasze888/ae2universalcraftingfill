@@ -78,3 +78,19 @@
   `isSameItemSameComponents` ≙ `Ingredient.of(template).test`，提取/背包/autocraft 同构），
   故客户端发送路径只需两条：`hasCounts || oversizedList` → 自建包，否则
   `CraftingHelper.performTransfer`。
+
+## 范围：样板终端（PatternEncodingTermMenu）不纳入本附属
+
+- `PatternEncodingTermMenu extends MEStorageMenu`（不是 `CraftingTermMenu`），自有 `TYPE`，
+  与合成格是两块不同界面；`EncodingHelper.encodeCraftingRecipe(menu, @Nullable RecipeHolder<?>,
+  List<List<GenericStack>>, Predicate<ItemStack>)` 与 `encodeProcessingRecipe(menu,
+  List<List<GenericStack>>, List<GenericStack>)`、`isSupportedCraftingRecipe(Recipe)` 均为
+  `public static`，技术上可参考实现一个样板终端 universal 处理器。
+- 但 AE2-JEI-Integration 的 `JEIPlugin.registerRecipeTransferHandlers` 已注册
+  `EncodePatternTransferHandler`（universal，全部配方类别）→ `PatternEncodingTermMenu`，
+  样本终端缺口已被它覆盖。再在本附属加会与之重叠/冲突。
+- 本附属**只做合成格填充**（CraftingTermMenu / WirelessCraftingTermMenu）的
+  「非工作台配方 + 数量感知」缺口；AE2-JEI-Integration 的合成格专属处理器只处理
+  `minecraft:crafting`。两侧互补、无重叠。
+- 识别方式：AE2-JEI-Integration 用 `UseCraftingRecipeTransfer`（专属，RecipeTypes.CRAFTING）
+  处理合成格原版配方；`EncodePatternTransferHandler`（universal）处理样板终端。
