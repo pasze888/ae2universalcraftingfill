@@ -4,29 +4,40 @@
  * 本文件的部分组织方式与调用参考了以下 LGPL-3.0 项目，特此标注出处：
  * - Applied Energistics 2 (https://github.com/AppliedEnergistics/Applied-Energistics-2)：
  *   appeng/integration/modules/itemlists/CraftingHelper.java（服务端填充的客户端入口）、
- *   appeng/core/network/serverbound/FillCraftingGridFromRecipePacket.java（实际的填充行为）。
+ *   appeng/core/network/serverbound/FillCraftingGridFromRecipePacket.java（实际的填充行为）、
+ *   appeng/integration/modules/itemlists/EncodingHelper.java（物品模板挑选的优先级逻辑）。
  * - AE2 JEI Integration by Tamaized (https://github.com/Tamaized/AE2-JEI-Integration)：
  *   transfer/UseCraftingRecipeTransfer.java、transfer/EncodePatternTransferHandler.java
  *  （JEI 处理器的结构、ctrl+点击补货交互与 IRecipeTransferError 的用法）。
  */
 package io.github.lzp.ae2universalcraftingfill.jei.transfer;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.network.PacketDistributor;
 
+import appeng.api.stacks.AEItemKey;
+import appeng.core.network.serverbound.FillCraftingGridFromRecipePacket;
 import appeng.integration.modules.itemlists.CraftingHelper;
+import appeng.integration.modules.itemlists.EncodingHelper;
+import appeng.menu.me.common.GridInventoryEntry;
 import appeng.menu.me.items.CraftingTermMenu;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
@@ -41,16 +52,17 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
  * 非工作台类配方（模组机器配方等）的输入填进 3x3 合成格。
  *
  * <p>填充逻辑不在这里实现：客户端调用 AE2 自带的
- * {@link CraftingHelper#performTransfer}，它发送 {@code FillCraftingGridFromRecipePacket}
- * 到服务端，由 AE2 完成「清格回插 -> 网络按存量排序提取 -> 背包兜底 -> ctrl+点击
- * 顺带安排 autocraft」，与原生工作台配方转移行为完全一致。
+ * {@link CraftingHelper#performTransfer}（或直接发送
+ * {@code FillCraftingGridFromRecipePacket}），由 AE2 服务端完成
+ * 「清格回插 -> 网络按存量排序提取 -> 背包兜底 -> ctrl+点击顺带安排 autocraft」，
+ * 与原生工作台配方转移行为完全一致。
  *
  * <p>过滤规则（按 grilling 会话确定的共识）：
  * <ul>
  * <li>工作台配方由 AE2 / AE2-JEI-Integration 的专属处理器负责，本处理器不干预；</li>
  * <li>仅处理以真实 {@link RecipeHolder} 为基础的配方显示，纯合成显示静默忽略；</li>
  * <li>配方须有至少 1 个非空输入；</li>
- * <li>输入超过 9 个时拒绝（AE2 服务端 3x3 展开的硬约束）；</li>
+ * <li>输入超过 9 个时尽力而为：取前 9 个非空输入填入，并附提示；</li>
  * <li>铁砧类配方拒绝转移（黑名单）。</li>
  * </ul>
  */
@@ -59,14 +71,23 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
 
     private static final String KEY_BLACKLISTED = "ae2universalcraftingfill.transfer.blacklisted";
     private static final String KEY_NO_INPUTS = "ae2universalcraftingfill.transfer.no_inputs";
-    private static final String KEY_TOO_LARGE = "ae2universalcraftingfill.transfer.too_large";
     private static final String KEY_COUNT_WARNING = "ae2universalcraftingfill.transfer.count_warning";
+    private static final String KEY_TRUNCATED = "ae2universalcraftingfill.transfer.truncated";
 
     private static final int CRAFTING_GRID_SIZE = 9;
 
     /** 对填入 3x3 合成格没有意义的配方类型（registry key 全名）。 */
     private static final Set<String> BLACKLISTED_RECIPE_TYPES = Set.of(
             "minecraft:anvil");
+
+    /**
+     * 与 AE2 原生 {@code EncodingHelper.ENTRY_COMPARATOR} 同语义：可合成 > 未损耗 > 存量多。
+     * （原常量是包私有，这里自建一份。）
+     */
+    private static final Comparator<GridInventoryEntry> ENTRY_COMPARATOR = Comparator
+            .comparing(GridInventoryEntry::isCraftable)
+            .thenComparing(entry -> !(entry.getWhat() instanceof AEItemKey itemKey) || !itemKey.isDamaged())
+            .thenComparing(GridInventoryEntry::getStoredAmount);
 
     private final MenuType<T> menuType;
     private final Class<T> menuClass;
@@ -112,25 +133,35 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         }
 
         var ingredients = recipe.getIngredients();
-        if (ingredients.isEmpty() || ingredients.stream().allMatch(Ingredient::isEmpty)) {
+        var nonEmptyIngredients = ingredients.stream().filter(i -> !i.isEmpty()).toList();
+        if (nonEmptyIngredients.isEmpty()) {
             return helper.createUserErrorWithTooltip(Component.translatable(KEY_NO_INPUTS));
         }
 
-        // AE2 服务端把输入平铺成 3x3 时硬性要求 <=9 个，超出只能拒绝
-        if (ingredients.size() > CRAFTING_GRID_SIZE) {
-            return helper.createUserErrorWithTooltip(Component.translatable(KEY_TOO_LARGE));
-        }
+        // AE2 服务端按 recipeId 展开输入时要求完整列表 <=9（ensure3by3CraftingMatrix 会抛异常）；
+        // 超出时降级为模板路径（recipeId=null），尽力而为：取前 9 个非空输入填入，并提示可能不完整
+        boolean oversizedList = ingredients.size() > CRAFTING_GRID_SIZE;
+        boolean truncated = nonEmptyIngredients.size() > CRAFTING_GRID_SIZE;
 
         // 合成格每格只能放 1 个；配方显示里出现数量 >1 的输入时照填，但提示可能不足
         boolean oversizedCounts = hasOversizedCounts(recipeSlotsView);
 
         if (doTransfer) {
             // ctrl+点击时缺失的材料顺带安排 autocraft（与 AE2 原生行为一致）
-            CraftingHelper.performTransfer(menu, holder.id(), recipe, AbstractContainerScreen.hasControlDown());
+            boolean craftMissing = AbstractContainerScreen.hasControlDown();
+            if (!oversizedList) {
+                CraftingHelper.performTransfer(menu, holder.id(), recipe, craftMissing);
+            } else {
+                PacketDistributor.sendToServer(new FillCraftingGridFromRecipePacket(null,
+                        buildTemplates(menu, nonEmptyIngredients), craftMissing));
+            }
         }
 
+        if (truncated) {
+            return new CosmeticWarningError(Component.translatable(KEY_TRUNCATED));
+        }
         if (oversizedCounts) {
-            return new CountWarningError();
+            return new CosmeticWarningError(Component.translatable(KEY_COUNT_WARNING));
         }
         return null;
     }
@@ -150,9 +181,32 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
     }
 
     /**
-     * 数量超限的提示：转移照常执行，只附加一个非阻塞的悬浮提示。
+     * 输入超过 9 个时的降级路径：为前 9 个非空输入挑选合适的物品模板
+     * （优先网络存量，逻辑同 AE2 {@code CraftingHelper.findGoodTemplateItems}），
+     * 以 recipeId=null 的模板路径发送，绕开服务端 3x3 展开对完整列表 <=9 的硬约束。
      */
-    private record CountWarningError() implements IRecipeTransferError {
+    private static NonNullList<ItemStack> buildTemplates(CraftingTermMenu menu, List<Ingredient> ingredients) {
+        var ingredientPriorities = EncodingHelper.getIngredientPriorities(menu, ENTRY_COMPARATOR);
+        var templates = NonNullList.withSize(CRAFTING_GRID_SIZE, ItemStack.EMPTY);
+        int slot = 0;
+        for (var ingredient : ingredients) {
+            if (slot >= CRAFTING_GRID_SIZE) {
+                break;
+            }
+            var stack = ingredientPriorities.entrySet().stream()
+                    .filter(e -> e.getKey() instanceof AEItemKey itemKey && itemKey.matches(ingredient))
+                    .max(Comparator.comparingInt(Map.Entry::getValue))
+                    .map(e -> ((AEItemKey) e.getKey()).toStack())
+                    .orElse(ingredient.getItems()[0]);
+            templates.set(slot++, stack);
+        }
+        return templates;
+    }
+
+    /**
+     * 非阻塞的悬浮提示：转移照常执行，只附加提示文本。
+     */
+    private record CosmeticWarningError(Component message) implements IRecipeTransferError {
         @Override
         public Type getType() {
             return Type.COSMETIC;
@@ -160,7 +214,7 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
 
         @Override
         public void getTooltip(ITooltipBuilder tooltip) {
-            tooltip.add(Component.translatable(KEY_COUNT_WARNING));
+            tooltip.add(message);
         }
     }
 }
