@@ -8,7 +8,7 @@
  * autocraft 按 (槽位, 缺口数量) 安排）；格子里已装有正确物品时以其为基底
  * 续补到目标数量（原版固定 1 个，等价于「已有则保留」），其余行为保持一致。
  */
-package io.github.lzp.ae2universalcraftingfill.server;
+package io.github.pasze888.ae2universalcraftingfill.server;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ import appeng.helpers.ICraftingGridMenu.AutoCraftEntry;
 import appeng.items.storage.ViewCellItem;
 import appeng.me.storage.NullInventory;
 import appeng.util.prioritylist.IPartitionList;
-import io.github.lzp.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
+import io.github.pasze888.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
 
 public final class FillWithCountsHandler {
 

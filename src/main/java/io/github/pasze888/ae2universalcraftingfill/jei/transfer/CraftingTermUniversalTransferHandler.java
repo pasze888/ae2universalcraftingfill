@@ -10,7 +10,7 @@
  *   transfer/UseCraftingRecipeTransfer.java、transfer/EncodePatternTransferHandler.java
  *  （JEI 处理器的结构、ctrl+点击补货交互与 IRecipeTransferError 的用法）。
  */
-package io.github.lzp.ae2universalcraftingfill.jei.transfer;
+package io.github.pasze888.ae2universalcraftingfill.jei.transfer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,7 +39,7 @@ import appeng.integration.modules.itemlists.CraftingHelper;
 import appeng.integration.modules.itemlists.EncodingHelper;
 import appeng.menu.me.common.GridInventoryEntry;
 import appeng.menu.me.items.CraftingTermMenu;
-import io.github.lzp.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
+import io.github.pasze888.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;

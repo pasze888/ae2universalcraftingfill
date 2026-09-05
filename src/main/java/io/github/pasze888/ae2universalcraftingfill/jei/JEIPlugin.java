@@ -5,14 +5,14 @@
  * tamaized/ae2jeiintegration/integration/modules/jei/JEIPlugin.java（LGPL-3.0）：
  * https://github.com/Tamaized/AE2-JEI-Integration
  */
-package io.github.lzp.ae2universalcraftingfill.jei;
+package io.github.pasze888.ae2universalcraftingfill.jei;
 
 import net.minecraft.resources.ResourceLocation;
 
 import appeng.menu.me.items.CraftingTermMenu;
 import appeng.menu.me.items.WirelessCraftingTermMenu;
-import io.github.lzp.ae2universalcraftingfill.AE2UniversalCraftingFill;
-import io.github.lzp.ae2universalcraftingfill.jei.transfer.CraftingTermUniversalTransferHandler;
+import io.github.pasze888.ae2universalcraftingfill.AE2UniversalCraftingFill;
+import io.github.pasze888.ae2universalcraftingfill.jei.transfer.CraftingTermUniversalTransferHandler;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeTransferRegistration;

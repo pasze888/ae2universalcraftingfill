@@ -7,7 +7,7 @@
  * 原 packet 每格固定填充 1 个物品（为原版合成格设计）；本包为每个输入槽
  * 额外携带目标数量，供需要堆叠输入的非工作台配方（如祭坛 2x木棍 3x金锭）使用。
  */
-package io.github.lzp.ae2universalcraftingfill.network;
+package io.github.pasze888.ae2universalcraftingfill.network;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import io.github.lzp.ae2universalcraftingfill.AE2UniversalCraftingFill;
-import io.github.lzp.ae2universalcraftingfill.server.FillWithCountsHandler;
+import io.github.pasze888.ae2universalcraftingfill.AE2UniversalCraftingFill;
+import io.github.pasze888.ae2universalcraftingfill.server.FillWithCountsHandler;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**

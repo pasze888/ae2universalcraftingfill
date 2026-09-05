@@ -1,9 +1,9 @@
 /*
  * SPDX-License-Identifier: LGPL-3.0-or-later
  */
-package io.github.lzp.ae2universalcraftingfill;
+package io.github.pasze888.ae2universalcraftingfill;
 
-import io.github.lzp.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
+import io.github.pasze888.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
