@@ -40,3 +40,32 @@
   Clash 未开 TUN 时需给 Gradle 配 `systemProp.https.proxyHost=127.0.0.1 / proxyPort=7897`（临时配置，勿提交）。
 - JEI 的 API jar 也可以直接从 blamejaven maven 下载后用 `javap` 核对签名，不必依赖 GitHub API
   （匿名额度 60/h 容易耗尽；`raw.githubusercontent.com` 在本机不可靠）。
+
+## AE2 数量感知填充（自建包）踩坑与 API 事实
+
+- AE2 原生 `FillCraftingGridFromRecipePacket` 每格硬编码填 1 个（`poweredExtraction(...,1,...)`、
+  `split(1)`），堆叠数量只存在于 JEI 显示里 → 需要数量感知时只能自建包。
+- 服务端复刻填充所需的全套 API 都是公开的：`ICraftingGridMenu`（getEnergySource/getGridNode/
+  getCraftingMatrix→`InternalInventory`/getViewCells/isPlayerInventorySlotLocked/startAutoCrafting）、
+  `StorageHelper.poweredInsert/poweredExtraction`、`NullInventory.of()`、`ViewCellItem.createItemFilter`。
+- `AutoCraftEntry(key, slots)` 的 autocraft 数量 = `slots.size()`（`CraftConfirmMenu.planJob(what,
+  slots.size(), CRAFT_LESS)`），要表达「该槽要 n 个」就重复槽位下标 n 次。
+- NeoForge 21.1：`@EventBusSubscriber(bus = Bus.MOD)` 已弃用 → 在 `@Mod` 构造器注入 `IEventBus`
+  后 `modEventBus.addListener(...)`（同 AE2 `AppEngBase`）。
+- `KeyCounter.findFuzzy` 返回 `Collection<Object2LongMap.Entry<AEKey>>`（数量在 entry 上，
+  排序要在 map 成 `AEItemKey` 之前）；`AEItemKey.matches` 只有 `ItemStack` / `Ingredient`
+  两个重载，没有 `matches(AEItemKey)`。
+- Java record：自定义 canonical constructor 不能是 private（否则外部无法 new）；
+  循环变量在 lambda 里用需先赋给 final 局部变量。
+- 数据包注册：`RegisterPayloadHandlersEvent` + `registrar.playToServer(TYPE, CODEC, handler)`，
+  codec 用 `RegistryFriendlyByteBuf` 的 `StreamCodec.ofMember`。
+- `FillCraftingGridFromRecipePacket.handleOnServer` 逐槽语义（源自本地 `Applied-Energistics-2`
+  仓库 `origin/1.21.1` 分支源码）：匹配 → `continue` 保留不补数；不匹配 → `poweredInsert`
+  回插、余量 `player.getInventory().add()`、**放不下则留在格子**；提取/背包/autocraft 全部以
+  `currentItem.isEmpty()` 为门。自建数量版若从空栈无条件提取会覆盖残留 → 丢物品；须以
+  「槽位内容为空或匹配模板」作 fillable 门，且 autocraft 只在内容正确时安排。
+- 工作区根有 `Applied-Energistics-2` / `AE2-JEI-Integration` 源码 checkout（AE2 main 在 26.x），
+  读历史版本源码用 `git -C Applied-Energistics-2 show origin/1.21.1:<path>`，不必切分支；
+  本地标签未必齐全，分支引用可用。
+- `ItemStack.OPTIONAL_STREAM_CODEC`（1.21.1，api-sources 已核）即 AE2 原包的模板编解码，
+  空栈编码为空，可复用。

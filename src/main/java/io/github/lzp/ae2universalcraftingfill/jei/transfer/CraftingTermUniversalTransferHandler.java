@@ -12,6 +12,7 @@
  */
 package io.github.lzp.ae2universalcraftingfill.jei.transfer;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +35,13 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.core.network.serverbound.FillCraftingGridFromRecipePacket;
 import appeng.integration.modules.itemlists.CraftingHelper;
 import appeng.integration.modules.itemlists.EncodingHelper;
 import appeng.menu.me.common.GridInventoryEntry;
 import appeng.menu.me.items.CraftingTermMenu;
+import io.github.lzp.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -63,6 +66,8 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
  * <li>仅处理以真实 {@link RecipeHolder} 为基础的配方显示，纯合成显示静默忽略；</li>
  * <li>配方须有至少 1 个非空输入；</li>
  * <li>输入超过 9 个时尽力而为：取前 9 个非空输入填入，并附提示；</li>
+ * <li>JEI 显示槽与配方输入一一对应时，按显示堆叠数填充（如 2x木棍 3x金锭），
+ * 无法可靠对齐时退化为每格 1 个并附提示；</li>
  * <li>铁砧类配方拒绝转移（黑名单）。</li>
  * </ul>
  */
@@ -143,13 +148,20 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         boolean oversizedList = ingredients.size() > CRAFTING_GRID_SIZE;
         boolean truncated = nonEmptyIngredients.size() > CRAFTING_GRID_SIZE;
 
-        // 合成格每格只能放 1 个；配方显示里出现数量 >1 的输入时照填，但提示可能不足
-        boolean oversizedCounts = hasOversizedCounts(recipeSlotsView);
+        // 数量感知：JEI 输入槽视图与配方输入一一对应时，取显示堆叠数作为每格目标数量；
+        // 对应不上（无法可靠对齐）时退化为每格 1 个，仅在显示数量 >1 时提示
+        var viewCounts = extractCounts(recipeSlotsView, ingredients.size());
+        boolean hasCounts = viewCounts != null && viewCounts.stream().anyMatch(c -> c > 1);
+        boolean countsUnknown = viewCounts == null && hasOversizedCounts(recipeSlotsView);
 
         if (doTransfer) {
             // ctrl+点击时缺失的材料顺带安排 autocraft（与 AE2 原生行为一致）
             boolean craftMissing = AbstractContainerScreen.hasControlDown();
-            if (!oversizedList) {
+            if (hasCounts) {
+                // 自定义数量感知填充（同样覆盖 >9 截断）
+                PacketDistributor.sendToServer(new FillCraftingGridWithCountsPacket(
+                        buildEntries(menu, ingredients, viewCounts), craftMissing));
+            } else if (!oversizedList) {
                 CraftingHelper.performTransfer(menu, holder.id(), recipe, craftMissing);
             } else {
                 PacketDistributor.sendToServer(new FillCraftingGridFromRecipePacket(null,
@@ -160,7 +172,7 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         if (truncated) {
             return new CosmeticWarningError(Component.translatable(KEY_TRUNCATED));
         }
-        if (oversizedCounts) {
+        if (countsUnknown) {
             return new CosmeticWarningError(Component.translatable(KEY_COUNT_WARNING));
         }
         return null;
@@ -181,8 +193,55 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
     }
 
     /**
-     * 输入超过 9 个时的降级路径：为前 9 个非空输入挑选合适的物品模板
-     * （优先网络存量，逻辑同 AE2 {@code CraftingHelper.findGoodTemplateItems}），
+     * JEI 输入槽视图与配方输入一一对应时，取每个输入的显示堆叠数（上限 64）。
+     * 对应不上时返回 null（无法可靠对齐，退化为每格 1 个）。
+     */
+    @Nullable
+    private static List<Integer> extractCounts(IRecipeSlotsView recipeSlotsView, int ingredientCount) {
+        var slotViews = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT);
+        if (slotViews.size() != ingredientCount) {
+            return null;
+        }
+        var counts = new ArrayList<Integer>(ingredientCount);
+        for (var slotView : slotViews) {
+            var count = slotView.getDisplayedItemStack().map(ItemStack::getCount).orElse(1);
+            counts.add(Math.max(1, Math.min(64, count)));
+        }
+        return counts;
+    }
+
+    /**
+     * 为输入挑选合适的物品模板（优先网络存量，逻辑同 AE2
+     * {@code CraftingHelper.findGoodTemplateItems}）。
+     */
+    private static ItemStack pickBestStack(Map<AEKey, Integer> ingredientPriorities, Ingredient ingredient) {
+        return ingredientPriorities.entrySet().stream()
+                .filter(e -> e.getKey() instanceof AEItemKey itemKey && itemKey.matches(ingredient))
+                .max(Comparator.comparingInt(Map.Entry::getValue))
+                .map(e -> ((AEItemKey) e.getKey()).toStack())
+                .orElse(ingredient.getItems()[0]);
+    }
+
+    /**
+     * 数量感知的降级路径：为每个非空输入（最多 9 个）挑选物品模板并携带目标数量。
+     */
+    private static List<FillCraftingGridWithCountsPacket.Entry> buildEntries(CraftingTermMenu menu,
+            List<Ingredient> ingredients, List<Integer> viewCounts) {
+        var ingredientPriorities = EncodingHelper.getIngredientPriorities(menu, ENTRY_COMPARATOR);
+        var entries = new ArrayList<FillCraftingGridWithCountsPacket.Entry>();
+        for (int i = 0; i < ingredients.size() && entries.size() < CRAFTING_GRID_SIZE; i++) {
+            var ingredient = ingredients.get(i);
+            if (ingredient.isEmpty()) {
+                continue;
+            }
+            entries.add(new FillCraftingGridWithCountsPacket.Entry(
+                    pickBestStack(ingredientPriorities, ingredient), viewCounts.get(i)));
+        }
+        return entries;
+    }
+
+    /**
+     * 输入超过 9 个时的降级路径（无数量信息时）：为前 9 个非空输入挑选物品模板，
      * 以 recipeId=null 的模板路径发送，绕开服务端 3x3 展开对完整列表 <=9 的硬约束。
      */
     private static NonNullList<ItemStack> buildTemplates(CraftingTermMenu menu, List<Ingredient> ingredients) {
@@ -193,12 +252,7 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
             if (slot >= CRAFTING_GRID_SIZE) {
                 break;
             }
-            var stack = ingredientPriorities.entrySet().stream()
-                    .filter(e -> e.getKey() instanceof AEItemKey itemKey && itemKey.matches(ingredient))
-                    .max(Comparator.comparingInt(Map.Entry::getValue))
-                    .map(e -> ((AEItemKey) e.getKey()).toStack())
-                    .orElse(ingredient.getItems()[0]);
-            templates.set(slot++, stack);
+            templates.set(slot++, pickBestStack(ingredientPriorities, ingredient));
         }
         return templates;
     }
