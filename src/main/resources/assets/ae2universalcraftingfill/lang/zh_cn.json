@@ -1,0 +1,6 @@
+{
+  "ae2universalcraftingfill.transfer.blacklisted": "该配方类型无法有效填入合成格",
+  "ae2universalcraftingfill.transfer.no_inputs": "该配方没有物品输入",
+  "ae2universalcraftingfill.transfer.too_large": "该配方输入超过 9 个，无法放入合成格",
+  "ae2universalcraftingfill.transfer.count_warning": "部分输入槽需要多于 1 个物品；每格仅填入 1 个"
+}
