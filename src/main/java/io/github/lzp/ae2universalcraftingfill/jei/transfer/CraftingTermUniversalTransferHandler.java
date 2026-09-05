@@ -51,7 +51,7 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
  * <li>仅处理以真实 {@link RecipeHolder} 为基础的配方显示，纯合成显示静默忽略；</li>
  * <li>配方须有至少 1 个非空输入；</li>
  * <li>输入超过 9 个时拒绝（AE2 服务端 3x3 展开的硬约束）；</li>
- * <li>黑名单内的配方类型（熔炉系、切石、锻造等）拒绝转移。</li>
+ * <li>铁砧类配方拒绝转移（黑名单）。</li>
  * </ul>
  */
 public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
@@ -66,13 +66,7 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
 
     /** 对填入 3x3 合成格没有意义的配方类型（registry key 全名）。 */
     private static final Set<String> BLACKLISTED_RECIPE_TYPES = Set.of(
-            "minecraft:smelting",
-            "minecraft:blasting",
-            "minecraft:smoking",
-            "minecraft:campfire_cooking",
-            "minecraft:stonecutting",
-            "minecraft:smithing_trim",
-            "minecraft:smithing_transform");
+            "minecraft:anvil");
 
     private final MenuType<T> menuType;
     private final Class<T> menuClass;
