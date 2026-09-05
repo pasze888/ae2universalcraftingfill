@@ -78,6 +78,15 @@
   `isSameItemSameComponents` ≙ `Ingredient.of(template).test`，提取/背包/autocraft 同构），
   故客户端发送路径只需两条：`hasCounts || oversizedList` → 自建包，否则
   `CraftingHelper.performTransfer`。
+- 数量源在 JEI 槽的 `ItemStack` 上（本地 `JustEnoughItems` 仓库 `origin/1.21.1` 源码已核：
+  `IRecipeSlotView.getIngredients(ITEM_STACK)` 直接取出 ItemStack，`RecipeSlotIngredients`
+  只做可见性/循环切换，不改数量）→ `getItemStacks().mapToInt(ItemStack::getCount).max()`
+  可拿到堆叠数（比 `getDisplayedItemStack()` 稳，不受循环切换影响）。
+- **踩坑：对齐必须用「非空配料数量」，不能用 `getIngredients().size()`**。配方
+  `getIngredients()` 常含空槽补齐（格子型/填充列表），而 JEI 只显示非空输入槽；按完整
+  大小对齐会失败 → `viewCounts` 空 → `hasCounts=false` → 退回原生 `performTransfer`
+  每格填 1 个（即「物品1x2/物品2x3 只各填 1 个」的 bug）。修复：`slotViews.size() ==
+  nonEmptyCount` 才对齐，`buildEntries` 按非空下标取数量。
 
 ## 范围：样板终端（PatternEncodingTermMenu）不纳入本附属
 

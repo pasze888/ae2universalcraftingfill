@@ -137,9 +137,9 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         boolean oversizedList = ingredients.size() > CRAFTING_GRID_SIZE;
         boolean truncated = nonEmptyCount > CRAFTING_GRID_SIZE;
 
-        // 数量感知：一次遍历取每个 JEI 输入槽的显示堆叠数；与配方输入一一对应时按显示数量
-        // 填充，对应不上（无法可靠对齐）时退化为每格 1 个，仅在见过显示数量 >1 时提示
-        var ingredientCounts = extractCounts(recipeSlotsView, ingredients.size());
+        // 数量感知：一次遍历取每个 JEI 输入槽的堆叠数；与非空配方输入按顺序一一对应时
+        // 按显示数量填充，对应不上（无法可靠对齐）时退化为每格 1 个，仅在见过显示数量 >1 时提示
+        var ingredientCounts = extractCounts(recipeSlotsView, ingredients);
         var viewCounts = ingredientCounts.perIngredient();
         boolean hasCounts = !viewCounts.isEmpty() && ingredientCounts.anyOverOne();
         boolean countsUnknown = viewCounts.isEmpty() && ingredientCounts.anyOverOne();
@@ -170,16 +170,23 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
     }
 
     /**
-     * 一次遍历提取每个 JEI 输入槽的显示堆叠数（不做上限钳位，服务端会按最大堆叠收口）：
-     * 与配方输入一一对应时返回逐位数量，对不上时数量列表为空；anyOverOne 记录是否见过 >1。
+     * 一次遍历提取每个 JEI 输入槽的堆叠数量（不做上限钳位，服务端会按最大堆叠收口）：
+     * 数量列表按**非空**配方输入的顺序对齐（JEI 通常只显示非空输入槽，而配方
+     * {@code getIngredients()} 常带空槽补齐，若按完整列表大小对齐会失败、退化到每格
+     * 1 个）；对应不上时数量列表为空；anyOverOne 记录是否见过 >1。
      */
-    private static IngredientCounts extractCounts(IRecipeSlotsView recipeSlotsView, int ingredientCount) {
+    private static IngredientCounts extractCounts(IRecipeSlotsView recipeSlotsView, List<Ingredient> ingredients) {
         var slotViews = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT);
-        boolean aligned = slotViews.size() == ingredientCount;
-        var counts = new ArrayList<Integer>(aligned ? ingredientCount : 0);
+        var nonEmptyCount = ingredients.stream().filter(i -> !i.isEmpty()).count();
+        boolean aligned = slotViews.size() == nonEmptyCount;
+        var counts = new ArrayList<Integer>(aligned ? slotViews.size() : 0);
         boolean anyOverOne = false;
         for (var slotView : slotViews) {
-            var count = Math.max(1, slotView.getDisplayedItemStack().map(ItemStack::getCount).orElse(1));
+            // 取该槽全变体的最大堆叠数，比 getDisplayedItemStack() 更稳（不受循环切换影响）
+            var count = Math.max(1, slotView.getItemStacks()
+                    .mapToInt(ItemStack::getCount)
+                    .max()
+                    .orElse(1));
             if (count > 1) {
                 anyOverOne = true;
             }
@@ -217,14 +224,17 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
                 .thenComparing(GridInventoryEntry::getStoredAmount);
         var ingredientPriorities = EncodingHelper.getIngredientPriorities(menu, availability);
         var entries = new ArrayList<FillCraftingGridWithCountsPacket.Entry>();
-        for (int i = 0; i < ingredients.size() && entries.size() < CRAFTING_GRID_SIZE; i++) {
+        int nonEmptyIdx = 0;
+        for (int i = 0; i < ingredients.size() && nonEmptyIdx < CRAFTING_GRID_SIZE; i++) {
             var ingredient = ingredients.get(i);
             if (ingredient.isEmpty()) {
                 continue;
             }
-            var count = viewCounts.isEmpty() ? 1 : viewCounts.get(i);
+            // viewCounts 与非空输入按顺序对齐（extractCounts 已保证），按非空下标取数量
+            var count = viewCounts.isEmpty() ? 1 : viewCounts.get(nonEmptyIdx);
             entries.add(new FillCraftingGridWithCountsPacket.Entry(
                     pickBestStack(ingredientPriorities, ingredient), count));
+            nonEmptyIdx++;
         }
         return entries;
     }
