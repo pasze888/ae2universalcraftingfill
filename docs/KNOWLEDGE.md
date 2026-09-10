@@ -164,3 +164,27 @@
 
 未翻译的键会在非生产环境触发 "Untranslated configuration keys" 开发警告，日志里会列出
 **实际请求过的全部键**：`grep '"<modid>.configuration' run/logs/latest.log` 即可拿到待补键表，不必猜。
+
+## 同一个配方在 1.21.1 的三个 id（源码已核）
+
+一个配方可能挂着三个互不相干的注册名，原版恰好三者同名（都是 `minecraft:smelting`），
+模组各起各的名字就露馅（AE2CS）：
+
+| 名字 | 注册表 / 出处 | 谁能看到 |
+|---|---|---|
+| `ae2cs:crystal_aggregator_recipe_serializer` | `Registries.RECIPE_SERIALIZER`（`AECSRecipeSerializers:32`） | 数据包 JSON 的 `"type"` 字段 |
+| `ae2cs:crystal_aggregator_recipe` | `Registries.RECIPE_TYPE`（`AECSRecipeTypes`） | 只能看模组源码 |
+| `ae2cs:crystal_aggregator` | JEI 的 `RecipeType.createRecipeHolderType(...)`（`CrystalAggregatorRecipeCategory:37`） | JEI 类别 / 模组源码 |
+
+- JSON 的 `"type"` 是**序列化器**：`Recipe.CODEC = BuiltInRegistries.RECIPE_SERIALIZER.byNameCodec()
+  .dispatch(Recipe::getSerializer, ...)`（`Recipe.java:17`）。
+- **RecipeType 不进 JSON**：`Recipe#getType()`（`Recipe.java:68`）由 Java 类写死，
+  `RecipeManager` 据此分组（`RecipeManager.java:171`）；`RecipeSerializer` 没有 getType。
+- 因此一个配方类 = 一个类型 + 一个序列化器；"一个序列化器对多个类型"只能靠多个配方子类
+  共用一个序列化器实例。"一个类型对多个序列化器"才是常态（`minecraft:crafting` 挂
+  crafting_shaped / crafting_shapeless / crafting_special_* 一堆）。
+- 实战结论：配置里按 id 排除时，**类型名和序列化器名两个都认**，否则用户从数据包 JSON
+  复制来的名字（序列化器）会匹配不上；AE2CS 五个机器都是 JEI 名 + `_recipe` / `_recipe_serializer`。
+- AE2CS 的熵变反应室用的是 **AE2 的** `ae2:entropy` 类型（`byType(AERecipeTypes.ENTROPY)`），
+  JEI 类别名才是 `ae2cs:entropy_variation_reaction_chamber`；`ae2cs:crystal_growth` 是纯展示
+  （`RecipeType.create("ae2cs","crystal_growth", CrystalSeedItem.class)`，元素非 RecipeHolder）。

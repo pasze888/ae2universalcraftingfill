@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
@@ -119,9 +120,12 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
             return null;
         }
 
-        // 配置黑名单中的配方类型不转移
-        var recipeTypeKey = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
-        if (recipeTypeKey != null && Config.BLACKLISTED_RECIPE_TYPES.get().contains(recipeTypeKey.toString())) {
+        // 配置黑名单：配方类型名或序列化器名任一命中即排除。数据包 JSON 里的 "type" 是序列化器
+        // 注册名，模组未必与 RecipeType 同名（如 AE2CS：类型 crystal_aggregator_recipe、
+        // 序列化器 crystal_aggregator_recipe_serializer），故两者都认。
+        var blacklist = Config.BLACKLISTED_RECIPE_TYPES.get();
+        if (isBlacklisted(blacklist, BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()))
+                || isBlacklisted(blacklist, BuiltInRegistries.RECIPE_SERIALIZER.getKey(recipe.getSerializer()))) {
             return helper.createUserErrorWithTooltip(Component.translatable(KEY_BLACKLISTED));
         }
 
@@ -162,6 +166,10 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
             return new CosmeticWarningError(Component.translatable(KEY_COUNT_WARNING));
         }
         return null;
+    }
+
+    private static boolean isBlacklisted(List<? extends String> blacklist, @Nullable ResourceLocation id) {
+        return id != null && blacklist.contains(id.toString());
     }
 
     /**

@@ -5,7 +5,7 @@
   "ae2universalcraftingfill.configuration.title": "%s Configuration",
   "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml": "Client Settings",
   "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml.title": "Client Settings",
-  "ae2universalcraftingfill.configuration.blacklisted_recipe_types": "Blacklisted recipe types",
-  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.tooltip": "Recipe type ids that get no transfer button, e.g. minecraft:smelting. Only RecipeType registry ids are accepted; invalid entries are ignored and logged.",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types": "Transfer blacklist",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.tooltip": "Recipe type or recipe serializer ids that get no transfer button (the JSON \"type\" field is the serializer); matching either one excludes it. Invalid entries are ignored and logged.",
   "ae2universalcraftingfill.configuration.blacklisted_recipe_types.button": "Edit list"
 }

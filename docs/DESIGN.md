@@ -107,6 +107,12 @@ else CraftingHelper.performTransfer(...) // 都能表达，走 AE2 原生
 - 只对拥有真实 `RecipeHolder` 的配方生效，展示型类别连 `RecipeType` 都拿不到，
   不可能也不需要进名单；
 - 用注册名而不是泛泛的类型对象，是为了让整合包作者不改代码就能关掉某类配方，
-  例如服务端会把这类配方拒掉、客户端却依然摆个能点的按钮的情况。
+  例如服务端会把这类配方拒掉、客户端却依然摆个能点的按钮的情况；
+- **配方类型名与序列化器名都认**。同一个配方在 1.21.1 里可能挂着三个不同名字：
+  `RecipeType` 注册名、`RecipeSerializer` 注册名（数据包 JSON 里的 `"type"`）、
+  JEI 类别 id。其中 RecipeType 名**既不在 JSON 里也不在界面上**，靠 `Recipe#getType()`
+  由 Java 类写死（`RecipeManager:171` 按它分组），用户无从得知；而序列化器名能从 JSON 直接复制。
+  所以两者任一命中即排除——让配置能对上用户手上真实拿得到的那个名字
+  （AE2CS：类型 `ae2cs:crystal_aggregator_recipe`、序列化器 `..._recipe_serializer`）。
 
 换句话说，第 7 节的规则是“默认就对”，这一节是留给现实世界的旋钮。

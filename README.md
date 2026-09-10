@@ -31,11 +31,16 @@ AE2 在 1.20.x 及 26.x 自带「工作台配方 → 合成终端」的 JEI 转�
 客户端配置 `config/ae2universalcraftingfill-client.toml`：
 
 ```toml
-# 不提供转移按钮的配方类型注册名列表
+# 不提供转移按钮的配方类型 / 配方序列化器名单
 blacklisted_recipe_types = []
 ```
 
-列入其中的配方类型（如 `"minecraft:smelting"`）不再显示转移按钮；也可在模组列表里点 **Config** 图形化修改。只用来排除「有真实配方对象、却仍不该填进 3×3 合成格」的配方类型；展示型类别与没有物品输入的配方由代码判据自动排除，不需要配置。
+列入其中的配方**不再显示转移按钮**；也可在模组列表里点 **Config** 图形化修改。两种 id 都认，任一命中即排除：
+
+- 配方类型（`RecipeType`）注册名，如 `"minecraft:smelting"`、`"ae2cs:crystal_aggregator_recipe"`；
+- 配方序列化器注册名，即数据包 JSON 里的 `"type"` 字段，如 `"ae2cs:crystal_aggregator_recipe_serializer"`。
+
+模组未必给两者起同名（原版恰好同名，AE2CS 就不一样），所以写哪个都生效。只用来排除「有真实配方对象、却仍不该填进 3×3 合成格」的配方；展示型类别与没有物品输入的配方由代码判据自动排除，不需要配置。
 
 ### 协议
 
@@ -56,8 +61,13 @@ License: LGPL-3.0-or-later.
 Client config `config/ae2universalcraftingfill-client.toml`:
 
 ```toml
-# Recipe types that get no transfer button
+# Recipe types / recipe serializers that get no transfer button
 blacklisted_recipe_types = []
 ```
 
-Recipe types listed there (e.g. `"minecraft:smelting"`) get no transfer button; it can also be edited graphically through the **Config** button in the mod list. Meant only for recipe types that have a real recipe object but still should not be filled into the 3×3 grid; display-only categories and recipes without item inputs are excluded automatically and need no config.
+Anything listed there gets **no transfer button**; it can also be edited graphically through the **Config** button in the mod list. Both kinds of id are accepted, and matching either one is enough:
+
+- the recipe type (`RecipeType`) id, e.g. `"minecraft:smelting"`, `"ae2cs:crystal_aggregator_recipe"`;
+- the recipe serializer id, i.e. the `"type"` field in a datapack JSON, e.g. `"ae2cs:crystal_aggregator_recipe_serializer"`.
+
+Mods do not always give both the same name (vanilla happens to, AE2CS does not), so either spelling works. Meant only for recipes that have a real recipe object but still should not be filled into the 3×3 grid; display-only categories and recipes without item inputs are excluded automatically and need no config.

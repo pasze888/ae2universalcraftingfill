@@ -23,8 +23,10 @@ public final class Config {
     static {
         var builder = new ModConfigSpec.Builder();
         BLACKLISTED_RECIPE_TYPES = builder
-                .comment("不提供转移按钮的配方类型注册名列表，如 \"minecraft:smelting\"。",
-                        "只认配方类型（RecipeType）的注册名，写错的条目会被忽略并记日志。")
+                .comment("不提供转移按钮的配方名单，可写配方类型（RecipeType）注册名，也可写配方序列化器注册名。",
+                        "数据包 JSON 里的 \"type\" 就是序列化器，两者不同名时写哪个都行（如 AE2CS 的",
+                        "ae2cs:crystal_aggregator_recipe 与 ae2cs:crystal_aggregator_recipe_serializer）。",
+                        "写错的条目会被忽略并记日志。")
                 .defineListAllowEmpty("blacklisted_recipe_types", List.of(),
                         () -> "minecraft:smelting",
                         o -> o instanceof String id && ResourceLocation.tryParse(id) != null);

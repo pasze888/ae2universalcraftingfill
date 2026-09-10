@@ -5,7 +5,7 @@
   "ae2universalcraftingfill.configuration.title": "%s 配置",
   "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml": "客户端设置",
   "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml.title": "客户端设置",
-  "ae2universalcraftingfill.configuration.blacklisted_recipe_types": "配方类型黑名单",
-  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.tooltip": "不提供转移按钮的配方类型注册名列表，如 minecraft:smelting。只认配方类型（RecipeType）的注册名，写错的条目会被忽略并记日志。",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types": "转移黑名单",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.tooltip": "不提供转移按钮的配方名单：可写配方类型（RecipeType）注册名，也可写配方序列化器注册名（数据包 JSON 里的 type），任一命中即排除。写错的条目会被忽略并记日志。",
   "ae2universalcraftingfill.configuration.blacklisted_recipe_types.button": "编辑列表"
 }
