@@ -149,3 +149,18 @@
 - 主类不是 `@Mod(dist = Dist.CLIENT)` 时，注册要用 `FMLEnvironment.dist.isClient()` 包住：
   方法引用走 indy，`ConfigurationScreen` 的构造器要到该表达式首次执行时才解析，
   所以服务端不会加载到这个客户端类。
+
+## NeoForge 21.1 配置界面的翻译键（源码 + 实测日志已核）
+
+`ConfigurationScreen` 会请求这一族键，缺一个就露馅（标签直接显示原始键名）：
+- 界面标题 `<modid>.configuration.title`（含 `%s` = 模组显示名）；
+- 配置节按钮与节标题 `<modid>.configuration.section.<配置文件名：非字母数字→点、去首尾点、小写>`
+  与同键 `+ ".title"`，如 `ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml`；
+- 值标签 `valueSpec.getTranslationKey()`，未调 `.translation(...)` 时回落 `<modid>.configuration.<path>`；
+- 值提示 = 标签键 `+ ".tooltip"`：**该键不存在时用 `.comment(...)` 的文本兜底**
+  （`getTooltipComponent` 里 `Component.translatableWithFallback(tooltipKey, comment)`），
+  所以 `.comment()` 留着当 toml 文件注释、提示另写 `.tooltip` 键；
+- 列表值的编辑按钮 = 标签键 `+ ".button"`（fallback 是 `uitext.sectiontext`，即 "Edit"）。
+
+未翻译的键会在非生产环境触发 "Untranslated configuration keys" 开发警告，日志里会列出
+**实际请求过的全部键**：`grep '"<modid>.configuration' run/logs/latest.log` 即可拿到待补键表，不必猜。

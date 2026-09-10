@@ -1,5 +1,11 @@
 {
   "ae2universalcraftingfill.transfer.blacklisted": "This recipe type is excluded by the mod config",
   "ae2universalcraftingfill.transfer.count_warning": "Some ingredient slots need more than 1 item, but the required amounts could not be determined; only 1 was filled per slot",
-  "ae2universalcraftingfill.transfer.truncated": "This recipe has more than 9 ingredients; only the first 9 were filled"
+  "ae2universalcraftingfill.transfer.truncated": "This recipe has more than 9 ingredients; only the first 9 were filled",
+  "ae2universalcraftingfill.configuration.title": "%s Configuration",
+  "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml": "Client Settings",
+  "ae2universalcraftingfill.configuration.section.ae2universalcraftingfill.client.toml.title": "Client Settings",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types": "Blacklisted recipe types",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.tooltip": "Recipe type ids that get no transfer button, e.g. minecraft:smelting. Only RecipeType registry ids are accepted; invalid entries are ignored and logged.",
+  "ae2universalcraftingfill.configuration.blacklisted_recipe_types.button": "Edit list"
 }
