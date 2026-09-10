@@ -35,7 +35,7 @@ AE2 在 1.20.x 及 26.x 自带「工作台配方 → 合成终端」的 JEI 转�
 blacklisted_recipe_types = []
 ```
 
-列入其中的配方类型（如 `"minecraft:smelting"`）不再显示转移按钮。只用来排除「有真实配方对象、却仍不该填进 3×3 合成格」的配方类型；展示型类别与没有物品输入的配方由代码判据自动排除，不需要配置。
+列入其中的配方类型（如 `"minecraft:smelting"`）不再显示转移按钮；也可在模组列表里点 **Config** 图形化修改。只用来排除「有真实配方对象、却仍不该填进 3×3 合成格」的配方类型；展示型类别与没有物品输入的配方由代码判据自动排除，不需要配置。
 
 ### 协议
 
@@ -60,4 +60,4 @@ Client config `config/ae2universalcraftingfill-client.toml`:
 blacklisted_recipe_types = []
 ```
 
-Recipe types listed there (e.g. `"minecraft:smelting"`) get no transfer button. Meant only for recipe types that have a real recipe object but still should not be filled into the 3×3 grid; display-only categories and recipes without item inputs are excluded automatically and need no config.
+Recipe types listed there (e.g. `"minecraft:smelting"`) get no transfer button; it can also be edited graphically through the **Config** button in the mod list. Meant only for recipe types that have a real recipe object but still should not be filled into the 3×3 grid; display-only categories and recipes without item inputs are excluded automatically and need no config.

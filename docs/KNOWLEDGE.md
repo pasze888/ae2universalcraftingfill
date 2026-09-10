@@ -137,3 +137,15 @@
   （`getRaw` 里 `Preconditions.checkState(loadedConfig != null)`），不是返回默认值；
   客户端配置在 GUI 出现前已加载，正常路径读它没问题，真抛出来也会被 JEI 的
   `RecipeTransferService.transferRecipe` 捕获（记日志 + internal error → 按钮隐藏，不崩）。
+
+## NeoForge 21.1 客户端配置界面（已核源码）
+
+- 模组列表里的 Config 按钮**不会**自动可用：`ModListScreen:373` 是
+  `configButton.active = IConfigScreenFactory.getForMod(selectedMod).isPresent()`，
+  不注册扩展点就是灰的（`:283` 初始即 `active = false`）。注册默认界面：
+  `container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new)`，
+  `net.neoforged.neoforge.client.gui.ConfigurationScreen` 的构造器为
+  `(ModContainer mod, Screen parent)`（NeoForge 自身的 `ClientNeoForgeMod` 同款写法）。
+- 主类不是 `@Mod(dist = Dist.CLIENT)` 时，注册要用 `FMLEnvironment.dist.isClient()` 包住：
+  方法引用走 indy，`ConfigurationScreen` 的构造器要到该表达式首次执行时才解析，
+  所以服务端不会加载到这个客户端类。
