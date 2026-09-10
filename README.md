@@ -26,6 +26,17 @@ AE2 在 1.20.x 及 26.x 自带「工作台配方 → 合成终端」的 JEI 转�
 - 不依赖 AE2-JEI-Integration，可共存（JEI 专属处理器优先于 universal 处理器，注册不冲突）；
 - 无 JEI 时不加载任何功能。
 
+### 配置
+
+客户端配置 `config/ae2universalcraftingfill-client.toml`：
+
+```toml
+# 不提供转移按钮的配方类型注册名列表
+blacklisted_recipe_types = []
+```
+
+列入其中的配方类型（如 `"minecraft:smelting"`）不再显示转移按钮。只用来排除「有真实配方对象、却仍不该填进 3×3 合成格」的配方类型；展示型类别与没有物品输入的配方由代码判据自动排除，不需要配置。
+
 ### 协议
 
 LGPL-3.0-or-later（与 AE2、AE2-JEI-Integration 一致；引用代码的出处标注见各源文件头）。
@@ -39,3 +50,14 @@ AE2 ships JEI recipe transfer for vanilla crafting recipes on 1.20.x and 26.x, b
 Item sourcing reuses AE2's own server-side fill logic: return grid contents to the network, extract from ME storage sorted by availability, fall back to the player inventory, and Ctrl+click additionally schedules autocrafting for missing items. Ingredient amounts shown by JEI are respected when the recipe slots can be matched up; otherwise one item per slot is filled with a notice. Display-only categories that are not backed by a recipe (anvil, brewing, fuel, composting, villager trades) get no transfer button, and neither do recipes without item inputs (fluid-only recipes, etc.).
 
 License: LGPL-3.0-or-later.
+
+### Config
+
+Client config `config/ae2universalcraftingfill-client.toml`:
+
+```toml
+# Recipe types that get no transfer button
+blacklisted_recipe_types = []
+```
+
+Recipe types listed there (e.g. `"minecraft:smelting"`) get no transfer button. Meant only for recipe types that have a real recipe object but still should not be filled into the 3×3 grid; display-only categories and recipes without item inputs are excluded automatically and need no config.

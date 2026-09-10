@@ -84,7 +84,8 @@ else CraftingHelper.performTransfer(...) // 都能表达，走 AE2 原生
 - **样板终端（PatternEncodingTermMenu）**：它不继承 `CraftingTermMenu`，是另一块界面；
   其缺口已被 AE2-JEI-Integration 的 universal `EncodePatternTransferHandler` 覆盖，再加一份会重叠；
 - **铁砧、酿造、燃料、堆肥、村民交易等展示型类别**：JEI 在场自造对象，没有配方表数据也就没东西可填；
-  不列黑名单（负列表永远不完备），改用正判据 `recipeBase instanceof RecipeHolder`；
+  不用代码里维护的名单（负列表永远不完备），改用正判据 `recipeBase instanceof RecipeHolder`
+  （配置级黑名单见 §8，那里管的是另一回事）；
 - **没有物品输入的配方**（纯流体等）：有真实配方对象，但同样没有可搬进合成格的东西，
   与上一条同归为“无可填内容”；
 
@@ -94,3 +95,18 @@ else CraftingHelper.performTransfer(...) // 都能表达，走 AE2 原生
 过度输入/数量未知，那两种仍然给按钮，只附非阻塞提示。
 
 判断标准统一是：**别人已经做了的不做，做了没意义的不做，没有数据的不摆假按钮**。
+
+## 8. 配置黑名单
+
+正判据（无 `RecipeHolder`、无物品输入）能自动盖住“没数据可填”，但盖不住“有数据却不该填”——
+后者只能由人判断，且大多与具体模组有关。所以这一块做成配置项
+`blacklisted_recipe_types`，默认空，实现上就是按 `RecipeType` 注册名比对：
+
+- 作用面**只有客户端**（`ModConfig.Type.CLIENT`）：它决定的只是按钮显不显示，
+  填充本身照旧由服务端按自己的规则收口，不需要两边同步；
+- 只对拥有真实 `RecipeHolder` 的配方生效，展示型类别连 `RecipeType` 都拿不到，
+  不可能也不需要进名单；
+- 用注册名而不是泛泛的类型对象，是为了让整合包作者不改代码就能关掉某类配方，
+  例如服务端会把这类配方拒掉、客户端却依然摆个能点的按钮的情况。
+
+换句话说，第 7 节的规则是“默认就对”，这一节是留给现实世界的旋钮。

@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -37,6 +38,7 @@ import appeng.integration.modules.itemlists.CraftingHelper;
 import appeng.integration.modules.itemlists.EncodingHelper;
 import appeng.menu.me.common.GridInventoryEntry;
 import appeng.menu.me.items.CraftingTermMenu;
+import io.github.pasze888.ae2universalcraftingfill.Config;
 import io.github.pasze888.ae2universalcraftingfill.network.FillCraftingGridWithCountsPacket;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
@@ -61,6 +63,8 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
  * <li>工作台配方由 AE2 / AE2-JEI-Integration 的专属处理器负责，本处理器不干预；</li>
  * <li>没有可填内容时不提供转移按钮：非 {@link RecipeHolder} 的展示型显示
  * （铁砧、酿造、燃料、堆肥、村民交易等），以及没有物品输入的配方（纯流体等）；</li>
+ * <li>配置黑名单中的配方类型不提供转移（见 {@link Config}），用于排除有真实配方对象、
+ * 却仍不该填进合成格的情况；</li>
  * <li>输入超过 9 个时尽力而为：取前 9 个非空输入填入，并附提示；</li>
  * <li>JEI 显示槽与配方输入一一对应时，按显示堆叠数填充（如 2x木棍 3x金锭），
  * 无法可靠对齐时退化为每格 1 个并附提示。</li>
@@ -69,6 +73,7 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
 public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         implements IUniversalRecipeTransferHandler<T> {
 
+    private static final String KEY_BLACKLISTED = "ae2universalcraftingfill.transfer.blacklisted";
     private static final String KEY_COUNT_WARNING = "ae2universalcraftingfill.transfer.count_warning";
     private static final String KEY_TRUNCATED = "ae2universalcraftingfill.transfer.truncated";
 
@@ -112,6 +117,12 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         // 工作台配方由专属处理器负责，不干预
         if (recipe.getType() == RecipeType.CRAFTING) {
             return null;
+        }
+
+        // 配置黑名单中的配方类型不转移
+        var recipeTypeKey = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+        if (recipeTypeKey != null && Config.BLACKLISTED_RECIPE_TYPES.get().contains(recipeTypeKey.toString())) {
+            return helper.createUserErrorWithTooltip(Component.translatable(KEY_BLACKLISTED));
         }
 
         var ingredients = recipe.getIngredients();

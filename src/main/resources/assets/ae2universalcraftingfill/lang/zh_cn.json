@@ -1,4 +1,5 @@
 {
+  "ae2universalcraftingfill.transfer.blacklisted": "该配方类型已在配置中排除",
   "ae2universalcraftingfill.transfer.count_warning": "部分输入槽需要多于 1 个物品，但无法确定所需数量；每格仅填入 1 个",
   "ae2universalcraftingfill.transfer.truncated": "该配方输入超过 9 个，仅填入前 9 个"
 }

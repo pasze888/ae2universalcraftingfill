@@ -120,3 +120,20 @@
   `minecraft:crafting`。两侧互补、无重叠。
 - 识别方式：AE2-JEI-Integration 用 `UseCraftingRecipeTransfer`（专属，RecipeTypes.CRAFTING）
   处理合成格原版配方；`EncodePatternTransferHandler`（universal）处理样板终端。
+
+## NeoForge 21.1 配置（已核源码）
+
+- `@Mod` 构造器可注入 `ModContainer`（NeoForge 自身的 `NeoForgeMod(IEventBus, Dist, ModContainer)`
+  即同款用法；按类型注入，参数顺序无关）。
+- `modContainer.registerConfig(ModConfig.Type.CLIENT, SPEC)`；
+  `ModConfig.Type` 有 STARTUP / CLIENT / COMMON / SERVER 四种，文件落在
+  `config/<modid>-client.toml`。
+- `ModConfigSpec.Builder#defineList(...)` **要求列表非空**（内部用 `ListValueSpec.NON_EMPTY`），
+  默认空列表必须用 `defineListAllowEmpty(String path, List<? extends T> defaultValue,
+  Supplier<T> newElementSupplier, Predicate<Object> elementValidator)`；元素校验失败的条目
+  会被丢弃并记日志（校验不等于启动失败）。
+- `ResourceLocation.tryParse(String)` 返回 null 表示非法，可直接当元素校验谓词。
+- `ConfigValue#get()` 带 `cachedValue` 缓存，但配置**未加载时会抛 `IllegalStateException`**
+  （`getRaw` 里 `Preconditions.checkState(loadedConfig != null)`），不是返回默认值；
+  客户端配置在 GUI 出现前已加载，正常路径读它没问题，真抛出来也会被 JEI 的
+  `RecipeTransferService.transferRecipe` 捕获（记日志 + internal error → 按钮隐藏，不崩）。
