@@ -17,12 +17,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -61,27 +59,20 @@ import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
  * <p>过滤规则（按 grilling 会话确定的共识）：
  * <ul>
  * <li>工作台配方由 AE2 / AE2-JEI-Integration 的专属处理器负责，本处理器不干预；</li>
- * <li>仅处理以真实 {@link RecipeHolder} 为基础的配方显示，纯合成显示静默忽略；</li>
- * <li>配方须有至少 1 个非空输入；</li>
+ * <li>没有可填内容时不提供转移按钮：非 {@link RecipeHolder} 的展示型显示
+ * （铁砧、酿造、燃料、堆肥、村民交易等），以及没有物品输入的配方（纯流体等）；</li>
  * <li>输入超过 9 个时尽力而为：取前 9 个非空输入填入，并附提示；</li>
  * <li>JEI 显示槽与配方输入一一对应时，按显示堆叠数填充（如 2x木棍 3x金锭），
- * 无法可靠对齐时退化为每格 1 个并附提示；</li>
- * <li>铁砧类配方拒绝转移（黑名单）。</li>
+ * 无法可靠对齐时退化为每格 1 个并附提示。</li>
  * </ul>
  */
 public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
         implements IUniversalRecipeTransferHandler<T> {
 
-    private static final String KEY_BLACKLISTED = "ae2universalcraftingfill.transfer.blacklisted";
-    private static final String KEY_NO_INPUTS = "ae2universalcraftingfill.transfer.no_inputs";
     private static final String KEY_COUNT_WARNING = "ae2universalcraftingfill.transfer.count_warning";
     private static final String KEY_TRUNCATED = "ae2universalcraftingfill.transfer.truncated";
 
     private static final int CRAFTING_GRID_SIZE = 9;
-
-    /** 对填入 3x3 合成格没有意义的配方类型（registry key 全名）。 */
-    private static final Set<String> BLACKLISTED_RECIPE_TYPES = Set.of(
-            "minecraft:anvil");
 
     private final MenuType<T> menuType;
     private final Class<T> menuClass;
@@ -109,10 +100,11 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
     public IRecipeTransferError transferRecipe(T menu, Object recipeBase, IRecipeSlotsView recipeSlotsView,
             Player player, boolean maxTransfer, boolean doTransfer) {
 
-        // 只处理以真实 RecipeHolder 为基础的配方显示；
-        // 村民交易、刷怪笼等纯合成显示不属于本附属的支持范围，静默忽略。
+        // 只有以真实 RecipeHolder 为基础的配方显示才有可转移的输入；铁砧、酿造、燃料、
+        // 堆肥、村民交易等由 JEI 在场自造对象，没有配方表数据。返回 internal error 让 JEI
+        // 不显示转移按钮，界面对这些类别保持与未安装本附属时一致。
         if (!(recipeBase instanceof RecipeHolder<?> holder)) {
-            return null;
+            return helper.createInternalError();
         }
 
         Recipe<?> recipe = holder.value();
@@ -122,14 +114,11 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
             return null;
         }
 
-        if (isBlacklisted(recipe.getType())) {
-            return helper.createUserErrorWithTooltip(Component.translatable(KEY_BLACKLISTED));
-        }
-
         var ingredients = recipe.getIngredients();
         long nonEmptyCount = ingredients.stream().filter(i -> !i.isEmpty()).count();
+        // 没有物品输入的配方（纯流体等）同样没有可填内容，与展示型类别一样不提供按钮
         if (nonEmptyCount == 0) {
-            return helper.createUserErrorWithTooltip(Component.translatable(KEY_NO_INPUTS));
+            return helper.createInternalError();
         }
 
         // AE2 服务端按 recipeId 展开输入时要求完整列表 <=9（ensure3by3CraftingMatrix 会抛异常）；
@@ -162,11 +151,6 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
             return new CosmeticWarningError(Component.translatable(KEY_COUNT_WARNING));
         }
         return null;
-    }
-
-    private static boolean isBlacklisted(RecipeType<?> recipeType) {
-        var key = BuiltInRegistries.RECIPE_TYPE.getKey(recipeType);
-        return key != null && BLACKLISTED_RECIPE_TYPES.contains(key.toString());
     }
 
     /**

@@ -1,6 +1,4 @@
 {
-  "ae2universalcraftingfill.transfer.blacklisted": "This recipe type cannot be meaningfully filled into a crafting grid",
-  "ae2universalcraftingfill.transfer.no_inputs": "This recipe has no item inputs",
   "ae2universalcraftingfill.transfer.count_warning": "Some ingredient slots need more than 1 item, but the required amounts could not be determined; only 1 was filled per slot",
   "ae2universalcraftingfill.transfer.truncated": "This recipe has more than 9 ingredients; only the first 9 were filled"
 }
