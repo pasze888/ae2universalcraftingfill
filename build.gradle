@@ -28,18 +28,7 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // JEI
-    maven {
-        name = "Jared's maven"
-        url = "https://maven.blamejared.com/"
-    }
-    maven {
-        name = "ModMaven"
-        url = "https://modmaven.dev"
-    }
-    // AE2 发布在 Maven Central
-    mavenCentral()
-    // CurseForge Maven：仅用于本地运行加载 AE2CS 等发布版 mod jar
+
     maven {
         name = "CurseMaven"
         url = "https://cursemaven.com"
@@ -131,17 +120,15 @@ configurations {
 }
 
 dependencies {
-    // JEI：编译期只用 API，完整本体仅本地运行，不对外发布依赖
-    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
-    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-
+    // JEI
+    implementation "curse.maven:jei-238222:8792638"
     // AE2
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
-    // AE2CS（AE2 Crystal Science）：仅本地运行时加载（CurseForge Maven 发布版 1.2.1，
-    // 便于实测晶能聚合器等非工作台配方），不参与编译、不对外发布依赖
+    // AE2CS（AE2 Crystal Science）
     localRuntime "curse.maven:ae2-crystal-science-1435174:8498888"
+    localRuntime "curse.maven:applied-energistics-2-wireless-terminals-459929:8450398"
+    localRuntime "curse.maven:just-enough-characters-250702:8771217"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
