@@ -39,6 +39,11 @@ repositories {
     }
     // AE2 发布在 Maven Central
     mavenCentral()
+    // CurseForge Maven：仅用于本地运行加载 AE2CS 等发布版 mod jar
+    maven {
+        name = "CurseMaven"
+        url = "https://cursemaven.com"
+    }
 }
 
 base {
@@ -133,6 +138,10 @@ dependencies {
 
     // AE2
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+
+    // AE2CS（AE2 Crystal Science）：仅本地运行时加载（CurseForge Maven 发布版 1.2.1，
+    // 便于实测晶能聚合器等非工作台配方），不参与编译、不对外发布依赖
+    localRuntime "curse.maven:ae2-crystal-science-1435174:8498888"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
