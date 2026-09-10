@@ -83,13 +83,15 @@ ${mod_description}
     ordering="AFTER"
     side="BOTH"
 
-# JEI 为可选：无 JEI 时本附属不加载任何功能，也不会崩溃
+# JEI 是本附属全部功能的来源：客户端缺它就装一个什么都不干的模组，所以报缺依赖作罢。
+# side=CLIENT 是必须的——校验只看客户端（JEI 自己也声明 IGNORE_SERVER_VERSION，
+# 专用服务器没有 JEI 是正常情形，不能让服务器拒启）。
 [[dependencies.${mod_id}]]
     modId="jei"
-    type="optional"
+    type="required"
     versionRange="${jei_version_range}"
     ordering="AFTER"
-    side="BOTH"
+    side="CLIENT"
 
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't

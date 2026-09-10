@@ -24,7 +24,7 @@ AE2 在 1.20.x 及 26.x 自带「工作台配方 → 合成终端」的 JEI 转�
 ### 兼容性
 
 - 不依赖 AE2-JEI-Integration，可共存（JEI 专属处理器优先于 universal 处理器，注册不冲突）；
-- 无 JEI 时不加载任何功能。
+- 依赖 AE2 与 **JEI**（JEI 只在客户端强制：专用服务器不装 JEI 也能正常启动）。
 
 ### 配置
 
@@ -52,7 +52,7 @@ Click the **+** button on any JEI recipe to fill the AE2 (Applied Energistics 2)
 
 AE2 ships JEI recipe transfer for vanilla crafting recipes on 1.20.x and 26.x, but not on 1.21.x — the community-maintained [AE2-JEI-Integration](https://github.com/Tamaized/AE2-JEI-Integration) fills that gap, yet it only handles `minecraft:crafting` recipes. This addon registers a JEI universal recipe transfer handler for AE2's crafting terminals, covering every recipe category that has no dedicated handler (modded machine recipes, etc.).
 
-Item sourcing reuses AE2's own server-side fill logic: return grid contents to the network, extract from ME storage sorted by availability, fall back to the player inventory, and Ctrl+click additionally schedules autocrafting for missing items. Ingredient amounts shown by JEI are respected when the recipe slots can be matched up; otherwise one item per slot is filled with a notice. Display-only categories that are not backed by a recipe (anvil, brewing, fuel, composting, villager trades) get no transfer button, and neither do recipes without item inputs (fluid-only recipes, etc.).
+Item sourcing reuses AE2's own server-side fill logic: return grid contents to the network, extract from ME storage sorted by availability, fall back to the player inventory, and Ctrl+click additionally schedules autocrafting for missing items. Ingredient amounts shown by JEI are respected when the recipe slots can be matched up; otherwise one item per slot is filled with a notice. Display-only categories that are not backed by a recipe (anvil, brewing, fuel, composting, villager trades) get no transfer button, and neither do recipes without item inputs (fluid-only recipes, etc.). Requires AE2 and JEI (JEI on the client only, so dedicated servers can run without it).
 
 License: LGPL-3.0-or-later.
 

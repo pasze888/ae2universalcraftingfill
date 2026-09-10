@@ -188,3 +188,13 @@
 - AE2CS 的熵变反应室用的是 **AE2 的** `ae2:entropy` 类型（`byType(AERecipeTypes.ENTROPY)`），
   JEI 类别名才是 `ae2cs:entropy_variation_reaction_chamber`；`ae2cs:crystal_growth` 是纯展示
   （`RecipeType.create("ae2cs","crystal_growth", CrystalSeedItem.class)`，元素非 RecipeHolder）。
+
+## mods.toml 依赖的 side 是真会被校验的（字节码已核）
+
+- `ModSorter.verifyDependencyVersions` 里对 `IModInfo.ModVersion` 的过滤同时用两个谓词：
+  `getType() == DependencyType.REQUIRED` 与 `getSide().isCorrectSide()`；后者按
+  `IModInfo.DependencySide`（内部就是一组 `Dist`，`isContained(Dist)`）判断。
+  → `type="required"` + `side="CLIENT"` 只在客户端强制，专用服务器缺该模组照样启动。
+- JEI 自己的 mods.toml 带 `displayTest="IGNORE_SERVER_VERSION"`（注释：让客户端能加入
+  没装 JEI 的服务器）→ 专用服务器没有 JEI 是官方认可的正常情形，所以给 JEI 写
+  `side="BOTH"` 的 required 会误伤服务器（AE2-JEI-Integration 就是这么写的）。
