@@ -87,6 +87,23 @@
   大小对齐会失败 → `viewCounts` 空 → `hasCounts=false` → 退回原生 `performTransfer`
   每格填 1 个（即「物品1x2/物品2x3 只各填 1 个」的 bug）。修复：`slotViews.size() ==
   nonEmptyCount` 才对齐，`buildEntries` 按非空下标取数量。
+- **踩坑（已修）：对齐前必须先过滤空输入槽视图。** JEI `RecipeLayoutBuilder.addSlot`
+  把空槽也无条件计入 `visibleSlots`（JEI 源码 `layout/builder/RecipeLayoutBuilder.java:65-74`），
+  空槽照样出现在 `getSlotViews(INPUT)` 里；AE2CS（AE2 Crystal Science）晶能聚合器 JEI 分类
+  固定 `for (i<3) addInputSlot` 留空占位（`CrystalAggregatorRecipeCategory.setRecipe:139-144`）
+  → `slotViews.size()` 恒为 3、`nonEmptyCount` 为 1~2，对齐恒失败 → `hasCounts=false`
+  退化到原生每格 1 个（配方数量 3/4 全部丢失，只填 1+1）。修复：先
+  `filter(view -> view.getItemStacks().findAny().isPresent())` 再比数量；纯流体输入槽
+  （itemStacks 空）同时被排除。
+- `SizedIngredient.getItems()`（api-sources `net/neoforged/neoforge/common/crafting/
+  SizedIngredient.java:138-145` 已核）返回 `copyWithCount(count)` 的栈 → 第三方 JEI 分类
+  若直接 `addItemStacks(si.getItems())` 会把配方数量显示到槽位上，本附属 `extractCounts`
+  即可读到堆叠数（AE2CS 晶能聚合器分类正是这么做的，数量源可靠）。
+- AE2CS `CrystalAggregatorRecipe implements Recipe<ThreeItemStackRecipeInput>`，序列化器
+  `ae2cs:crystal_aggregator_recipe_serializer`（input_a/b/c 为 SizedIngredient + result +
+  energy_cost），`getIngredients()` 只含非空输入（拆包后无 count），JEI 用
+  `RecipeType.createRecipeHolderType` 以真实 `RecipeHolder` 注册 → 本附属 universal handler
+  可直接兜底该配方类别（≤9 输入、非 crafting、非黑名单）。
 
 ## 范围：样板终端（PatternEncodingTermMenu）不纳入本附属
 

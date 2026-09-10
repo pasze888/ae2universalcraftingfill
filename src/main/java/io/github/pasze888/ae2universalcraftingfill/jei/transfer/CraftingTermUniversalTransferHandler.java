@@ -171,12 +171,16 @@ public class CraftingTermUniversalTransferHandler<T extends CraftingTermMenu>
 
     /**
      * 一次遍历提取每个 JEI 输入槽的堆叠数量（不做上限钳位，服务端会按最大堆叠收口）：
-     * 数量列表按**非空**配方输入的顺序对齐（JEI 通常只显示非空输入槽，而配方
-     * {@code getIngredients()} 常带空槽补齐，若按完整列表大小对齐会失败、退化到每格
-     * 1 个）；对应不上时数量列表为空；anyOverOne 记录是否见过 >1。
+     * 输入槽视图先过滤掉**不含物品**的（空占位槽、纯流体槽），再与**非空**配方输入按顺序
+     * 对齐（JEI 通常只显示非空输入槽，而配方 {@code getIngredients()} 常带空槽补齐；
+     * 部分配方分类如 AE2CS 晶能聚合器固定 add N 个输入槽、缺省留空，若不过滤会把
+     * 「槽视图数 == 非空输入数」的对齐误判为失败、退化到每格 1 个）；
+     * 对应不上时数量列表为空；anyOverOne 记录是否见过 >1。
      */
     private static IngredientCounts extractCounts(IRecipeSlotsView recipeSlotsView, List<Ingredient> ingredients) {
-        var slotViews = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT);
+        var slotViews = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT).stream()
+                .filter(view -> view.getItemStacks().findAny().isPresent())
+                .toList();
         var nonEmptyCount = ingredients.stream().filter(i -> !i.isEmpty()).count();
         boolean aligned = slotViews.size() == nonEmptyCount;
         var counts = new ArrayList<Integer>(aligned ? slotViews.size() : 0);
