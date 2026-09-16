@@ -1,10 +1,11 @@
 # 设计思路
 
-记录本项目为什么长成现在这样。行为说明见 `README.md`，API 事实见 `../reference/ae2-api.md`、`../reference/jei-api.md`、`../reference/neoforge-config.md`、`../reference/recipe-ids.md`，踩坑见 `../ai/gotchas.md`，本文只讲决策与取舍。
+记录本项目为什么长成现在这样。行为与兼容性说明见 `../reference/behavior-and-compatibility.md`，API 事实见 `../reference/ae2-api.md`、`../reference/jei-api.md`、`../reference/neoforge-config.md`、`../reference/recipe-ids.md`，踩坑见 `../ai/gotchas.md`，本文只讲决策与取舍。
 
 ## 1. 缺口在哪
 
-AE2 1.21.x 不带 JEI 转移；AE2-JEI-Integration 补位，但只注册了 `minecraft:crafting` 的**专属**处理器。
+AE2 在 1.20.x 及 26.x 自带「工作台配方 → 合成终端」的 JEI 转移，但 1.21.x 一代砍掉了自带的 JEI 支持；
+社区由 [AE2-JEI-Integration](https://github.com/Tamaized/AE2-JEI-Integration) 补位，但只注册了 `minecraft:crafting` 的**专属**处理器。
 JEI 的查找顺序是「专属 handler 优先，universal handler 兜底」，所以「没有专属处理器的配方类别」是空的——
 模组机器配方（祭坛、晶能聚合器…）、甚至是需要堆叠输入的原版工作台配方，点 + 号要么没反应，要么只填 1 个。
 

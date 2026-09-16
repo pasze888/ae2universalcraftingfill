@@ -27,10 +27,9 @@ README 未改正文（仅语言段落见待办）。提交前用脚本核对过�
 - [ ] **中文 README**：本仓库只有 `README.md`（中英混排在同一文件）。按 §7.3 应补 `README.zh-CN.md`，
       并把顶部语言切换改成 `[English](README.md) | [简体中文](README.zh-CN.md)`。
       本次没建该文件，所以顶部暂时保留原样的 `[English below](#english)`（改成指向不存在的文件会让链接失效）。
-- [ ] **README 瘦身**：`README.md` 的「背景」「行为」「兼容性」三节已超出 README 承载范围
-      （简介 / 安装 / 快速开始 / 配置 / 常用命令 / 文档链接）。建议把它们归到
-      `docs/design/universal-transfer-handler.md`（设计取舍）与 `docs/reference/`，README 只留简介、
-      安装、配置、常用命令与文档链接。本次按「正文不重写」约束未动。
-- [ ] **英文 README 待补**：`English` 一节缺「配置界面图形化修改」一句（中文节有），
-      且与中文节并列在同一文件里，等 `README.zh-CN.md` 建好后再统一。
+- [x] **README 瘦身**（2026-09-16 完成）：「背景」并入 `docs/design/universal-transfer-handler.md` §1，
+      「行为」「兼容性」迁入 `docs/reference/behavior-and-compatibility.md`；README 只留简介、安装、
+      配置、文档、协议，中英两节同步。
+- [x] **英文 README 待补**（2026-09-16 完成）：英文节已补齐「配置界面图形化修改」与行为概述，
+      与中文节逐项对齐。
 - [ ] **项目内 `AGENTS.md`**：本仓库没有；若后续要在 §7 之外补项目特有约定，再新建。
