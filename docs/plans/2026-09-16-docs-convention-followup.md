@@ -24,12 +24,12 @@ README 未改正文（仅语言段落见待办）。提交前用脚本核对过�
 
 ## 待办
 
-- [ ] **中文 README**：本仓库只有 `README.md`（中英混排在同一文件）。按 §7.3 应补 `README.zh-CN.md`，
-      并把顶部语言切换改成 `[English](README.md) | [简体中文](README.zh-CN.md)`。
-      本次没建该文件，所以顶部暂时保留原样的 `[English below](#english)`（改成指向不存在的文件会让链接失效）。
+- [x] **中文 README**（2026-09-16 完成）：`README.md` 拆成英文源与 `README.zh-CN.md` 中文同步，
+      顶部语言切换改为 `[English](README.md) | [简体中文](README.zh-CN.md)`；两份按 §7.3 逐项核对
+      标题层级、顺序、代码块数量、链接路径一致。
 - [x] **README 瘦身**（2026-09-16 完成）：「背景」并入 `docs/design/universal-transfer-handler.md` §1，
       「行为」「兼容性」迁入 `docs/reference/behavior-and-compatibility.md`；README 只留简介、安装、
-      配置、文档、协议，中英两节同步。
+      配置、文档、协议，中英两份同步。
 - [x] **英文 README 待补**（2026-09-16 完成）：英文节已补齐「配置界面图形化修改」与行为概述，
       与中文节逐项对齐。
 - [ ] **项目内 `AGENTS.md`**：本仓库没有；若后续要在 §7 之外补项目特有约定，再新建。
