@@ -1,6 +1,6 @@
 # 设计思路
 
-记录本项目为什么长成现在这样。行为说明见 `README.md`，API 事实与踩坑见 `KNOWLEDGE.md`，本文只讲决策与取舍。
+记录本项目为什么长成现在这样。行为说明见 `README.md`，API 事实见 `../reference/ae2-api.md`、`../reference/jei-api.md`、`../reference/neoforge-config.md`、`../reference/recipe-ids.md`，踩坑见 `../ai/gotchas.md`，本文只讲决策与取舍。
 
 ## 1. 缺口在哪
 
@@ -59,7 +59,7 @@ else CraftingHelper.performTransfer(...) // 都能表达，走 AE2 原生
 数量来自 JEI 槽显示的 `ItemStack.getCount()`，而服务端需要知道「第 i 个非空配料要几个」。
 两端没有共享的标识，只能靠**顺序对齐**。整个设计的复杂度几乎都堆在这里。
 
-对齐规则是 `槽视图数 == 非空配料数`。两个约束都是踩坑换来的（详见 `KNOWLEDGE.md`）：
+对齐规则是 `槽视图数 == 非空配料数`。两个约束都是踩坑换来的（详见 `../ai/gotchas.md`，API 事实见 `../reference/jei-api.md`）：
 
 - 要用**非空**配料数，不能用 `getIngredients().size()`：配方常带空槽补齐，JEI 只显示非空槽；
 - 比之前要**先滤掉空槽视图**：JEI 的 `addSlot` 把空占位槽也算进 `visibleSlots`，
