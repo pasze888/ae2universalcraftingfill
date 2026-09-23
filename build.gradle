@@ -121,7 +121,7 @@ configurations {
 
 dependencies {
     // JEI
-    implementation "curse.maven:jei-238222:8792638"
+    implementation "curse.maven:jei-238222:8512040"
     // AE2
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 

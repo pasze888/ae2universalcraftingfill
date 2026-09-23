@@ -1,9 +1,9 @@
 # JEI API 事实
 
-JEI（Just Enough Items）19.27.0.335 / 1.21.1 上**已验证**（编译通过 / 源码确认）的 API 签名与查找顺序事实。
+JEI（Just Enough Items）19.39.0.372 / 1.21.1 上**已验证**（编译通过 / 源码确认）的 API 签名与查找顺序事实。
 数量对齐的踩坑见 `../ai/gotchas.md`。
 
-## JEI 19.27.0.335（1.21.1）相关
+## JEI 19.39.0.372（1.21.1）相关
 
 - `IUniversalRecipeTransferHandler<C>` 三个方法：`getContainerClass()` / `getMenuType()`（返回 `Optional`）/
   `transferRecipe(C, Object, IRecipeSlotsView, Player, boolean, boolean)`，返回 `@Nullable IRecipeTransferError`。
